@@ -1,0 +1,21 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node / JS
+node_modules/
+dist/
+.env
+.env.local
+
+# Media Uploads & Cache
+uploads/*
+!uploads/.gitkeep
+.cache/
+.DS_Store
+
+# PyTorch & Model Cache
+*.pt
