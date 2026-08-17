@@ -1,0 +1,12 @@
+# NagarAI Hackathon PS-S05 ML & Deduplication Pipeline
+openai>=1.0.0
+torch
+torchaudio
+transformers
+ultralytics
+clip @ git+https://github.com/openai/CLIP.git
+sentence-transformers
+soundfile
+scipy
+numpy
+librosa

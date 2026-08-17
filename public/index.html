@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NagarAI Civic Complaint Intelligence Engine (PS-S05)</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="navbar">
+    <div class="brand">
+      <i class="fa-solid fa-city brand-icon"></i>
+      <div>
+        <h1>NagarAI Engine</h1>
+        <span class="subbrand">Civic Complaint Intelligence & Spatio-Semantic Deduplication</span>
+      </div>
+    </div>
+
+    <!-- Live System Stats Header Pills -->
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <span class="stat-value" id="statClusters">0</span>
+        <span class="stat-label">Active Clusters</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-value" id="statCitizens">0</span>
+        <span class="stat-label">Affected Citizens</span>
+      </div>
+      <div class="stat-pill highlight">
+        <span class="stat-value" id="statReduction">0%</span>
+        <span class="stat-label">Workload Reduction</span>
+      </div>
+    </div>
+
+    <!-- Action Toolbar Buttons -->
+    <div class="nav-actions">
+      <button class="btn btn-primary" id="btnOpenSubmitModal">
+        <i class="fa-solid fa-plus-circle"></i> Submit Complaint
+      </button>
+      <button class="btn btn-outline" id="btnSeedData">
+        <i class="fa-solid fa-database"></i> Seed Samples
+      </button>
+      <button class="btn btn-danger-outline" id="btnResetDB">
+        <i class="fa-solid fa-trash-can"></i> Reset DB
+      </button>
+    </div>
+  </header>
+
+  <!-- Category Filter Bar -->
+  <div class="filter-bar">
+    <span class="filter-title"><i class="fa-solid fa-filter"></i> Category Filter:</span>
+    <button class="filter-chip active" data-cat="all">All Issues</button>
+    <button class="filter-chip" data-cat="open_manhole"><i class="fa-solid fa-circle-exclamation text-red"></i> Open Manhole</button>
+    <button class="filter-chip" data-cat="pothole"><i class="fa-solid fa-car-burst text-orange"></i> Pothole</button>
+    <button class="filter-chip" data-cat="waterlogging"><i class="fa-solid fa-water text-blue"></i> Waterlogging</button>
+    <button class="filter-chip" data-cat="garbage"><i class="fa-solid fa-dumpster text-green"></i> Garbage Dump</button>
+    <button class="filter-chip" data-cat="streetlight"><i class="fa-solid fa-lightbulb text-yellow"></i> Streetlight</button>
+  </div>
+
+  <!-- Main Split Layout -->
+  <main class="dashboard-body">
+
+    <!-- Left Side: Interactive Leaflet Map -->
+    <section class="map-container">
+      <div id="map"></div>
+      <div class="map-overlay-legend">
+        <span class="legend-item"><span class="dot red"></span> Emergency (Manhole)</span>
+        <span class="legend-item"><span class="dot orange"></span> Pothole</span>
+        <span class="legend-item"><span class="dot blue"></span> Waterlogging</span>
+        <span class="legend-item"><span class="dot green"></span> Garbage</span>
+        <span class="legend-item"><span class="dot yellow"></span> Streetlight</span>
+      </div>
+    </section>
+
+    <!-- Right Side: Priority Leaderboard Cards Queue -->
+    <section class="queue-container">
+      <div class="queue-header">
+        <h2><i class="fa-solid fa-list-ol"></i> Priority Queue (Live Ranking)</h2>
+        <span class="queue-subtitle">Sorted by Formula Priority Score</span>
+      </div>
+
+      <div class="cluster-cards-list" id="clusterCardsList">
+        <!-- Cards rendered dynamically via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal 1: Submit Custom Complaint Form -->
+  <div class="modal-backdrop" id="submitModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-pen-to-square"></i> Submit Custom Complaint</h3>
+        <button class="modal-close" id="btnCloseSubmitModal">&times;</button>
+      </div>
+      <form id="complaintForm" class="modal-body">
+        
+        <div class="form-group">
+          <label><i class="fa-solid fa-align-left"></i> Complaint Description Text:</label>
+          <textarea id="formRawText" rows="3" placeholder="e.g. Dangerous deep pothole right outside CP Metro Gate 2"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label><i class="fa-solid fa-microphone"></i> Voice Note Audio (.wav, .mp3):</label>
+            <input type="file" id="formAudioFile" accept="audio/*">
+          </div>
+          <div class="form-group">
+            <label><i class="fa-solid fa-camera"></i> Civic Photo (.jpg, .png):</label>
+            <input type="file" id="formImageFile" accept="image/*">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label><i class="fa-solid fa-location-dot"></i> Latitude:</label>
+            <input type="number" step="any" id="formLat" value="28.6315" required>
+          </div>
+          <div class="form-group">
+            <label><i class="fa-solid fa-location-dot"></i> Longitude:</label>
+            <input type="number" step="any" id="formLon" value="77.2167" required>
+          </div>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="formSensitive">
+            <span><i class="fa-solid fa-hospital"></i> Near Hospital / School / Main Road (Sensitive Area)</span>
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelSubmit">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitForm">
+            <i class="fa-solid fa-paper-plane"></i> Run Engine & Deduplicate
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Cluster Inspector Detail -->
+  <div class="modal-backdrop" id="detailModal">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 id="modalDetailTitle">Cluster Details</h3>
+        <button class="modal-close" id="btnCloseDetailModal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalDetailBody">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Custom JS -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
