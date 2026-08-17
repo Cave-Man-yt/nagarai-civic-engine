@@ -1,76 +1,101 @@
 # NagarAI — Civic Complaint Intelligence Engine (PS-S05)
 ## Execution & Usage Guide
 
-### 🚀 Launching the Interactive Web Dashboard & REST API
+### 🚀 1. One-Click Launch (Recommended)
 
-You can launch the visual, map-based **Web Dashboard** and submit custom complaint inputs directly from your browser!
+Start the entire stack (PostgreSQL + PostGIS + pgvector, Python FastAPI ML Backend on `:8000`, and React 19 Frontend on `:5173`) with a single command:
 
 ```bash
-cd /Users/vivekjampani/.gemini/antigravity/scratch/nagarai-civic-engine
-source venv/bin/activate
-
-# Start the FastAPI Web Dashboard Server
-python server.py
+chmod +x start_dev.sh
+./start_dev.sh
 ```
 
-Then open your web browser at:
-👉 **[http://localhost:8000](http://localhost:8000)**
+Then open your browser at:
+- 👉 **Web Application**: [http://localhost:5173](http://localhost:5173)
+- 👉 **Backend API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-### 🌟 Dashboard Features & Testing Capabilities
+### 🛠️ 2. Manual Startup Workflow
 
-1. **Interactive Leaflet Map**:
-   - Geotagged map pins color-coded by issue category (`Red` = Open Manhole, `Orange` = Pothole, `Blue` = Waterlogging, `Green` = Garbage, `Yellow` = Streetlight).
-   - Click anywhere on the map to automatically set coordinates for a new complaint submission.
-
-2. **Custom Input Submission Modal**:
-   - Test your own inputs using **Text**, **Voice Audio File Upload (.wav, .mp3)**, or **Photo Image Upload (.jpg, .png)**.
-   - Speech notes automatically run through **Whisper / IndicConformer ASR** to generate issue descriptions.
-   - Photos automatically run through **YOLOv8 + CLIP** for classification & severity estimation.
-
-3. **Live Priority Leaderboard Queue**:
-   - Displays complaint clusters sorted by the transparent formula priority score ($0 - 100$).
-   - Shows **Assigned Department** & **SLA Resolution Countdown Timer**.
-   - Change status in real-time (`SUBMITTED` $\rightarrow$ `IN_PROGRESS` $\rightarrow$ `RESOLVED`) to trigger citizen notifications.
-
-4. **Cluster Inspector Modal**:
-   - Click **Details** on any card to view the mathematical step-by-step priority score breakdown, auto-generated summary, and all merged citizen reports.
-
----
-
-### 💻 Command-Line Interface (CLI) Tools
-
-If you prefer testing directly in the terminal, use these CLI tools:
-
-#### 1. Live 15-Complaint Judging Test Suite
+#### Terminal 1 — Database & Python ML Backend:
 ```bash
+# 1. Start PostgreSQL with PostGIS + pgvector (via Docker)
+docker run -d --name nagarai-postgres -p 5432:5432 \
+  -e POSTGRES_DB=nagarai \
+  -e POSTGRES_USER=nagarai \
+  -e POSTGRES_PASSWORD=nagarai_dev \
+  postgis/postgis:16-3.4
+
+# 2. Activate virtual environment & seed initial dataset
+source venv/bin/activate
+export DATABASE_URL="postgresql://nagarai:nagarai_dev@localhost:5432/nagarai"
+python db_setup.py
+
+# 3. Start the Unified FastAPI Backend
+python unified_server.py
+# Running on http://127.0.0.1:8000
+```
+
+#### Terminal 2 — Modern React 19 Frontend:
+```bash
+cd "nagarai-—-civic-complaint-intelligence-engine (1)"
+npm install
+npm run dev
+# Running on http://localhost:5173 (proxies /api requests to http://127.0.0.1:8000)
+```
+
+---
+
+### 🌟 3. Testing Features in the React UI
+
+1. **👑 Quick Officer Login**:
+   - Access the **War Room Dashboard** with live Leaflet GIS maps, priority-ranked work orders, and department filters.
+   - Inspect the **Live Wire Hazard** (Priority 157) near Kendriya Vidyalaya School and click **Dispatch Crew** to deploy an emergency squad.
+   - Click **Verify & Resolve** to test AI visual proof verification and celebrate with confetti.
+   - Click the **15-Complaint Benchmark** tab to run the full hackathon evaluation.
+   - Click the **Priority Formula** tab to simulate scores with custom weight sliders.
+
+2. **👤 Quick Citizen Login**:
+   - Access the **Citizen Grievance Portal** with 5-step grievance submission:
+     - **Step 1**: Choose Voice, Photo, or Text modality.
+     - **Step 2**: GPS location auto-pinning.
+     - **Step 3**: Category selection.
+     - **Step 4**: Language selection (Tamil, Hindi, Telugu, Marathi, English).
+     - **Step 5**: Instant grievance filing.
+   - Inspect filed tickets in **My Complaints** and vote to **Confirm** or **Dispute** resolved repairs.
+
+---
+
+### 💻 4. Command-Line Interface (CLI) & Test Tools
+
+#### Live 15-Complaint Judging Evaluation:
+```bash
+source venv/bin/activate
 python test_15_complaints_judging.py
 ```
 
-#### 2. Submit Custom Inputs via CLI
+#### Standalone PyTest Suite:
 ```bash
-# Text Complaint
-python run_my_complaint.py --text "Deep dangerous pothole blocking traffic on MG Road" --lat 28.6315 --lon 77.2167
-
-# Audio Speech Complaint
-python run_my_complaint.py --audio "path/to/speech.wav" --lat 28.6315 --lon 77.2167
-
-# Image Complaint
-python run_my_complaint.py --image "path/to/pothole.jpg" --lat 28.6315 --lon 77.2167
+source venv/bin/activate
+python -m pytest test_pipeline.py test_audio.py -v
 ```
 
-#### 3. Interactive Terminal Wizard
+#### Ingest Custom Complaint via CLI:
 ```bash
-python run_interactive.py
+source venv/bin/activate
+# Text
+python run_my_complaint.py --text "Deep dangerous pothole on Anna Salai" --lat 13.0645 --lon 80.2642
+
+# Voice Audio
+python run_my_complaint.py --audio "path/to/speech.wav" --lat 13.0645 --lon 80.2642
+
+# Image
+python run_my_complaint.py --image "path/to/pothole.jpg" --lat 13.0645 --lon 80.2642
 ```
 
-#### 4. Browse & Inspect Complaints Leaderboard
-```bash
-python browse_complaints.py
-```
-
-#### 5. Reset Database Store
-```bash
-python reset_db.py
-```
+#### Standalone HTML Browser Testbenches:
+Directly test local ML inference endpoints via static HTML test harnesses on `http://127.0.0.1:8000`:
+- `voice_test.html` — Live microphone recording & Whisper ASR testing
+- `photo_test.html` — Drag-and-drop image upload & CLIP classification testing
+- `text_test.html` — Multilingual NLP parsing and embedding testing

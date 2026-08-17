@@ -39,3 +39,6 @@ Thumbs.db
 
 # Build artifacts
 *.log
+*.db
+*.sqlite
+*.sqlite3

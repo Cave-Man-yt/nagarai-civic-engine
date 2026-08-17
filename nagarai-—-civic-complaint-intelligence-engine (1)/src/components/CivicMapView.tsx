@@ -311,21 +311,21 @@ export const CivicMapView: React.FC<CivicMapViewProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full min-h-[460px] rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white">
+    <div className="relative w-full h-full min-h-[460px] rounded-2xl overflow-hidden shadow-lg border border-slate-700/60 bg-slate-900">
       <div ref={mapContainerRef} className="w-full h-full min-h-[460px] z-10" />
 
       {/* Map Legend Overlay */}
-      <div className="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-md text-xs text-slate-700 pointer-events-auto max-w-[210px]">
-        <div className="font-bold text-slate-900 mb-2 flex items-center justify-between">
+      <div className="absolute top-4 right-4 z-20 bg-slate-900/90 backdrop-blur-md p-3 rounded-xl border border-slate-700/80 shadow-xl text-xs text-slate-200 pointer-events-auto max-w-[210px]">
+        <div className="font-bold text-slate-100 mb-2 flex items-center justify-between">
           <span>Live Risk Priority</span>
           <button
             onClick={handleRecenter}
-            className="text-[10px] text-sky-700 hover:text-sky-800 font-bold cursor-pointer"
+            className="text-[10px] text-sky-400 hover:text-sky-300 font-semibold cursor-pointer"
           >
             Reset View
           </button>
         </div>
-        <div className="space-y-1.5 font-medium">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-rose-500 animate-pulse border border-white"></span>
             <span>Critical Emergency (P &gt; 130)</span>
@@ -344,7 +344,7 @@ export const CivicMapView: React.FC<CivicMapViewProps> = ({
           </div>
         </div>
 
-        <div className="mt-2.5 pt-2 border-t border-slate-200 text-[10px] text-slate-500 font-medium space-y-1">
+        <div className="mt-2.5 pt-2 border-t border-slate-700/60 text-[10px] text-slate-400 space-y-1">
           <div className="flex items-center gap-1.5">
             <span>🏫</span>
             <span>School Buffer (300m +18)</span>

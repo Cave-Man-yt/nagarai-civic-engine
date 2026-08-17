@@ -29,7 +29,7 @@ import {
   Share2
 } from 'lucide-react';
 import { VolunteerUser, VolunteerTask, MasterCluster, VolunteerSkillCategory } from '../types';
-import { VOLUNTEER_SKILL_OPTIONS, SAMPLE_CIVIC_PHOTOS, SAMPLE_EXISTING_VOLUNTEERS } from '../data/mockData';
+import { VOLUNTEER_SKILL_OPTIONS } from '../data/mockData';
 
 interface VolunteerPortalProps {
   volunteerUser: VolunteerUser;
@@ -56,8 +56,8 @@ export const VolunteerPortal: React.FC<VolunteerPortalProps> = ({
   
   // Modal state for submitting completion proof
   const [resolvingTask, setResolvingTask] = useState<VolunteerTask | null>(null);
-  const [proofPhotoUrl, setProofPhotoUrl] = useState<string>(SAMPLE_CIVIC_PHOTOS.resolved_garbage);
-  const [resolutionNotes, setResolutionNotes] = useState<string>('Cleared all plastic waste and placed in municipal sorting bags. Footpath completely unobstructed.');
+  const [proofPhotoUrl, setProofPhotoUrl] = useState<string>('');
+  const [resolutionNotes, setResolutionNotes] = useState<string>('');
   const [isVerifyingProof, setIsVerifyingProof] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<{ score: number; summary: string } | null>(null);
 
@@ -357,7 +357,7 @@ export const VolunteerPortal: React.FC<VolunteerPortalProps> = ({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search task or ward..."
+                  placeholder="Search by task title or ward..."
                   className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                 />
               </div>
@@ -573,7 +573,7 @@ export const VolunteerPortal: React.FC<VolunteerPortalProps> = ({
 
               {/* Leaderboard Table */}
               <div className="space-y-2.5">
-                {[volunteerUser, ...SAMPLE_EXISTING_VOLUNTEERS.filter(v => v.phone !== volunteerUser.phone)]
+                {[volunteerUser]
                   .sort((a, b) => b.karmaPoints - a.karmaPoints)
                   .map((vol, rank) => {
                     const isCurrentUser = vol.phone === volunteerUser.phone;
@@ -665,43 +665,46 @@ export const VolunteerPortal: React.FC<VolunteerPortalProps> = ({
             {/* Photo Selection Preview */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-700">
-                1. Select / Upload Post-Resolution Photo Proof:
+                1. Upload Post-Resolution Photo Proof:
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                <div
-                  onClick={() => setProofPhotoUrl(SAMPLE_CIVIC_PHOTOS.resolved_garbage)}
-                  className={`p-2 rounded-2xl border cursor-pointer transition-all ${
-                    proofPhotoUrl === SAMPLE_CIVIC_PHOTOS.resolved_garbage
-                      ? 'bg-white border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
-                      : 'bg-slate-50 border-slate-200 hover:border-slate-300'
-                  }`}
-                >
+              {proofPhotoUrl ? (
+                <div className="p-3 rounded-2xl border border-emerald-500 bg-emerald-50/50">
                   <img
-                    src={SAMPLE_CIVIC_PHOTOS.resolved_garbage}
-                    alt="Cleaned Park"
-                    className="w-full h-24 object-cover rounded-xl mb-1.5"
+                    src={proofPhotoUrl}
+                    alt="Proof Photo"
+                    className="w-full h-36 object-cover rounded-xl mb-2"
                   />
-                  <div className="text-[11px] font-bold text-slate-800">Sample Clean Ground</div>
-                  <div className="text-[10px] text-emerald-700 font-semibold">Cleaned &amp; De-littered</div>
+                  <div className="flex items-center justify-between text-xs text-emerald-800">
+                    <span className="font-semibold">Photo Attached</span>
+                    <button
+                      type="button"
+                      onClick={() => setProofPhotoUrl('')}
+                      className="text-rose-600 hover:underline font-bold"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-
-                <div
-                  onClick={() => setProofPhotoUrl(SAMPLE_CIVIC_PHOTOS.resolved_road)}
-                  className={`p-2 rounded-2xl border cursor-pointer transition-all ${
-                    proofPhotoUrl === SAMPLE_CIVIC_PHOTOS.resolved_road
-                      ? 'bg-white border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
-                      : 'bg-slate-50 border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  <img
-                    src={SAMPLE_CIVIC_PHOTOS.resolved_road}
-                    alt="Patched Road"
-                    className="w-full h-24 object-cover rounded-xl mb-1.5"
+              ) : (
+                <label className="w-full h-32 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center text-slate-500 text-xs cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/30 transition-colors">
+                  <Upload className="w-6 h-6 mb-1 text-slate-400" />
+                  <span className="font-semibold text-slate-700">Upload Cleanup Photo Evidence</span>
+                  <span className="text-[10px] text-slate-400">PNG, JPG up to 10MB</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => setProofPhotoUrl(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
                   />
-                  <div className="text-[11px] font-bold text-slate-800">Sample Patched Surface</div>
-                  <div className="text-[10px] text-emerald-700 font-semibold">Cold-Mix Patched</div>
-                </div>
-              </div>
+                </label>
+              )}
             </div>
 
             {/* Notes */}
@@ -713,7 +716,7 @@ export const VolunteerPortal: React.FC<VolunteerPortalProps> = ({
                 rows={2}
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
-                placeholder="Describe how the small civic issue was resolved..."
+                placeholder="Describe how the issue was resolved..."
                 className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>

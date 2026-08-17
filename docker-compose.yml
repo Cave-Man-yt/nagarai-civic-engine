@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: nagarai-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: nagarai
+      POSTGRES_USER: nagarai
+      POSTGRES_PASSWORD: nagarai_dev
+    volumes:
+      - nagarai_pgdata:/var/lib/postgresql/data
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+volumes:
+  nagarai_pgdata:

@@ -3,52 +3,34 @@ import { RoleLoginLanding } from './components/RoleLoginLanding';
 import { Navbar } from './components/Navbar';
 import { OfficialDashboard } from './components/OfficialDashboard';
 import { CitizenPortal } from './components/CitizenPortal';
-import { VolunteerPortal } from './components/VolunteerPortal';
 import { BenchmarkJudgingSuite } from './components/BenchmarkJudgingSuite';
 import { PriorityFormulaModal } from './components/PriorityFormulaModal';
 import { ResolutionVerifyModal } from './components/ResolutionVerifyModal';
 import { RobustnessSandbox } from './components/RobustnessSandbox';
 import { CitizenNotificationDrawer } from './components/CitizenNotificationDrawer';
 import { OfficerNotificationDrawer } from './components/OfficerNotificationDrawer';
-import { 
-  MasterCluster, 
-  FieldCrew, 
-  CitizenNotification, 
-  OfficerNotification, 
-  StructuredComplaint, 
-  UserRole,
-  CitizenUser,
-  OfficerUser,
-  VolunteerUser,
-  VolunteerTask
-} from './types';
-import { 
-  INITIAL_SEED_CLUSTERS, 
-  INITIAL_CREWS, 
-  INITIAL_CITIZEN_NOTIFICATIONS, 
-  INITIAL_OFFICER_NOTIFICATIONS,
-  INITIAL_VOLUNTEER_TASKS,
-  SAMPLE_EXISTING_VOLUNTEERS,
-  SAMPLE_EXISTING_CITIZENS,
-  SAMPLE_EXISTING_OFFICERS
-} from './data/mockData';
+import { MasterCluster, FieldCrew, CitizenNotification, OfficerNotification, StructuredComplaint } from './types';
 
 export default function App() {
   // Step 1: Role Authentication State (Starts at null to present the Role Selection Landing page on app load)
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-
-  const [citizenUser, setCitizenUser] = useState<CitizenUser>(SAMPLE_EXISTING_CITIZENS[0]);
-  const [officerUser, setOfficerUser] = useState<OfficerUser>(SAMPLE_EXISTING_OFFICERS[0]);
-  const [volunteerUser, setVolunteerUser] = useState<VolunteerUser>(SAMPLE_EXISTING_VOLUNTEERS[0]);
+  const [userRole, setUserRole] = useState<'citizen' | 'officer' | null>(null);
+  const [citizenUser, setCitizenUser] = useState<{ name: string; phone: string }>({
+    name: '',
+    phone: '',
+  });
+  const [officerUser, setOfficerUser] = useState<{ name: string; phone: string; department?: string }>({
+    name: '',
+    phone: '',
+    department: 'Municipal Operations Division',
+  });
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'benchmark' | 'formula' | 'robustness'>('dashboard');
-  const [clusters, setClusters] = useState<MasterCluster[]>(INITIAL_SEED_CLUSTERS);
-  const [crews, setCrews] = useState<FieldCrew[]>(INITIAL_CREWS);
-  const [volunteerTasks, setVolunteerTasks] = useState<VolunteerTask[]>(INITIAL_VOLUNTEER_TASKS);
-  const [notifications, setNotifications] = useState<CitizenNotification[]>(INITIAL_CITIZEN_NOTIFICATIONS);
-  const [officerNotifications, setOfficerNotifications] = useState<OfficerNotification[]>(INITIAL_OFFICER_NOTIFICATIONS);
+  const [clusters, setClusters] = useState<MasterCluster[]>([]);
+  const [crews, setCrews] = useState<FieldCrew[]>([]);
+  const [notifications, setNotifications] = useState<CitizenNotification[]>([]);
+  const [officerNotifications, setOfficerNotifications] = useState<OfficerNotification[]>([]);
 
-  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(clusters[0]?.id || null);
+  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const [inspectFormulaCluster, setInspectFormulaCluster] = useState<MasterCluster | null>(null);
   const [verifyModalCluster, setVerifyModalCluster] = useState<MasterCluster | null>(null);
   const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
@@ -67,9 +49,11 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         const clusterList = Array.isArray(data) ? data : data.clusters || [];
-        if (clusterList && clusterList.length > 0) {
-          setClusters(clusterList);
-          if (!selectedClusterId) setSelectedClusterId(clusterList[0].id);
+        setClusters(clusterList);
+        if (clusterList.length > 0) {
+          setSelectedClusterId((prev) => prev || clusterList[0].id);
+        } else {
+          setSelectedClusterId(null);
         }
         if (data.crews && Array.isArray(data.crews)) {
           setCrews(data.crews);
@@ -127,139 +111,13 @@ export default function App() {
   }, [notifications, citizenUser.phone]);
 
   // Role Selection Handler
-  const handleSelectRole = (role: UserRole, user: any) => {
+  const handleSelectRole = (role: 'citizen' | 'officer', user: { name: string; phone: string; department?: string }) => {
     setUserRole(role);
     setIsNotificationDrawerOpen(false);
     if (role === 'citizen') {
-      setCitizenUser(user);
-    } else if (role === 'officer') {
-      setOfficerUser(user);
-    } else if (role === 'volunteer') {
-      setVolunteerUser(user);
-    }
-  };
-
-  // Volunteer Task Claim Handler
-  const handleClaimVolunteerTask = (taskId: string) => {
-    setVolunteerTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === taskId) {
-          const alreadyPledged = t.pledgedVolunteers.some(
-            (p) => p.phone === volunteerUser.phone || p.name === volunteerUser.name
-          );
-          if (alreadyPledged) return t;
-
-          return {
-            ...t,
-            status: 'in_progress',
-            pledgedVolunteers: [
-              ...t.pledgedVolunteers,
-              {
-                name: volunteerUser.name,
-                phone: volunteerUser.phone,
-                pledgedAt: new Date().toISOString(),
-              },
-            ],
-          };
-        }
-        return t;
-      })
-    );
-
-    // Notify Officer that a community volunteer has stepped in
-    const targetTask = volunteerTasks.find((t) => t.id === taskId);
-    if (targetTask) {
-      const offNotif: OfficerNotification = {
-        id: `off-vol-claim-${Date.now()}`,
-        clusterCode: targetTask.clusterCode,
-        title: `Community Volunteer Stepped In: ${volunteerUser.name}`,
-        department: 'Community Volunteer Grid',
-        priorityScore: 50,
-        severity: targetTask.severity,
-        type: 'cluster_merged',
-        message: `Volunteer ${volunteerUser.name} (${volunteerUser.primarySkill}) claimed community task ${targetTask.clusterCode}: "${targetTask.title}". Self-resolution in progress.`,
-        timestamp: new Date().toISOString(),
-        ward: targetTask.ward,
-        locationName: targetTask.locationName,
-        actionRequired: false,
-      };
-      setOfficerNotifications((prev) => [offNotif, ...prev]);
-    }
-  };
-
-  // Volunteer Task Proof Submission Handler
-  const handleSubmitVolunteerProof = (taskId: string, proof: {
-    afterPhotoUrl: string;
-    notes: string;
-    aiScore: number;
-  }) => {
-    const targetTask = volunteerTasks.find((t) => t.id === taskId);
-    const karmaEarned = targetTask ? targetTask.karmaPoints : 100;
-
-    // Update Volunteer's stats
-    setVolunteerUser((prev) => ({
-      ...prev,
-      karmaPoints: prev.karmaPoints + karmaEarned,
-      tasksCompletedCount: prev.tasksCompletedCount + 1,
-      badges: prev.tasksCompletedCount + 1 >= 5 && !prev.badges.includes('⭐ Neighborhood Star')
-        ? [...prev.badges, '⭐ Neighborhood Star']
-        : prev.badges,
-    }));
-
-    // Update Task status
-    setVolunteerTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === taskId) {
-          return {
-            ...t,
-            status: 'volunteer_resolved',
-            resolvedBy: {
-              volunteerName: volunteerUser.name,
-              volunteerPhone: volunteerUser.phone,
-              resolvedAt: new Date().toISOString(),
-              afterPhotoUrl: proof.afterPhotoUrl,
-              notes: proof.notes,
-              aiVerificationScore: proof.aiScore,
-            },
-          };
-        }
-        return t;
-      })
-    );
-
-    // Sync corresponding MasterCluster if any
-    if (targetTask) {
-      setClusters((prev) =>
-        prev.map((c) => {
-          if (c.id === targetTask.clusterId || c.clusterCode === targetTask.clusterCode) {
-            return {
-              ...c,
-              status: 'resolved',
-              resolution: {
-                resolvedAt: new Date().toISOString(),
-                resolutionNotes: `Community Volunteer (${volunteerUser.name}) resolved this issue: ${proof.notes}`,
-                aiVerificationScore: proof.aiScore,
-                aiVerificationSummary: `AI Vision verified cleanup and remediation by volunteer (${proof.aiScore}% score). Site cleared.`,
-                citizenConfirmations: { confirmed: c.affectedCitizenCount || 2, disputed: 0 },
-              },
-            };
-          }
-          return c;
-        })
-      );
-
-      // Add Citizen Notification of resolution
-      const notif: CitizenNotification = {
-        id: `notif-vol-res-${Date.now()}`,
-        clusterCode: targetTask.clusterCode,
-        channel: 'sms',
-        type: 'resolved',
-        message: `NagarAI: Community task ${targetTask.clusterCode} was successfully resolved by Volunteer ${volunteerUser.name}. Thank you for helping keep our city clean!`,
-        sentAt: new Date().toISOString(),
-        timestamp: new Date().toISOString(),
-        status: 'delivered',
-      };
-      setNotifications((prev) => [notif, ...prev]);
+      setCitizenUser({ name: user.name, phone: user.phone });
+    } else {
+      setOfficerUser({ name: user.name, phone: user.phone, department: user.department });
     }
   };
 
@@ -272,18 +130,18 @@ export default function App() {
       id: rawId,
       ticketNumber: ticketNo,
       timestamp: new Date().toISOString(),
-      citizenName: formData.citizenName || citizenUser.name,
-      citizenPhone: formData.citizenPhone || citizenUser.phone,
-      language: formData.inputLanguage || 'Tamil',
-      originalInputType: formData.originalInputType || 'multimodal',
-      rawInputText: formData.rawText,
+      citizenName: formData.citizenName || citizenUser.name || 'Anonymous',
+      citizenPhone: formData.citizenPhone || citizenUser.phone || '',
+      language: formData.inputLanguage || 'en',
+      originalInputType: formData.originalInputType || 'text',
+      rawInputText: formData.rawText || '',
       photoUrl: formData.photoUrl,
-      cleanDescription: formData.rawText || `${formData.category} reported near ${formData.locationName}`,
+      cleanDescription: formData.rawText || `${(formData.category || 'issue').replace(/_/g, ' ')} reported`,
       category: formData.category || 'pothole',
-      severity: formData.category === 'live_wire_hazard' ? 5 : 4,
-      locationName: formData.locationName || 'Anna Salai Main Road',
-      coordinates: formData.gpsCoordinates || { lat: 13.0646, lng: 80.2642 },
-      ward: 'Ward 12 - George Town & Central',
+      severity: formData.category === 'live_wire_hazard' ? 5 : 3,
+      locationName: formData.locationName || 'Municipal Ward',
+      coordinates: formData.gpsCoordinates || { lat: 0.0, lng: 0.0 },
+      ward: 'Ward 1',
       department: formData.category === 'live_wire_hazard' ? 'Electricity & Power' : 'Roads & PWD',
       nearbyLandmarks: [],
     };
@@ -291,14 +149,14 @@ export default function App() {
     // Add citizen SMS notification
     const newCitizenNotif: CitizenNotification = {
       id: `notif-${Date.now()}`,
-      recipientPhone: formData.citizenPhone || citizenUser.phone,
-      citizenPhone: formData.citizenPhone || citizenUser.phone,
-      citizenName: formData.citizenName || citizenUser.name,
+      recipientPhone: formData.citizenPhone || citizenUser.phone || '',
+      citizenPhone: formData.citizenPhone || citizenUser.phone || '',
+      citizenName: formData.citizenName || citizenUser.name || 'Citizen',
       channel: 'sms',
       type: 'intake_received',
-      clusterCode: 'CL-1092',
+      clusterCode: 'CL-PENDING',
       ticketNumber: ticketNo,
-      message: `NagarAI: Grievance ${ticketNo} logged. Auto-deduplicated into Master Work Order. Priority: 94.`,
+      message: `NagarAI: Grievance ${ticketNo} logged. Recorded into Municipal Work Order.`,
       sentAt: new Date().toISOString(),
       timestamp: new Date().toISOString(),
       status: 'delivered',
@@ -307,13 +165,13 @@ export default function App() {
     // Add officer operational alert
     const newOfficerNotif: OfficerNotification = {
       id: `off-notif-${Date.now()}`,
-      clusterCode: 'CL-1092',
+      clusterCode: 'CL-PENDING',
       title: `New Citizen Grievance Logged: ${ticketNo}`,
       department: newComplaint.department,
-      priorityScore: 94,
+      priorityScore: 70,
       severity: newComplaint.severity,
       type: newComplaint.severity >= 5 ? 'critical_emergency' : 'cluster_merged',
-      message: `Citizen ${newComplaint.citizenName} reported ${newComplaint.cleanDescription}. Ingestion completed via voice/multimodal parser.`,
+      message: `Citizen ${newComplaint.citizenName} reported ${newComplaint.cleanDescription}.`,
       timestamp: new Date().toISOString(),
       ward: newComplaint.ward,
       locationName: newComplaint.locationName,
@@ -329,12 +187,17 @@ export default function App() {
 
       if (res.ok) {
         const data = await res.json();
-        await fetchClusters();
+        if (data.allClusters && Array.isArray(data.allClusters) && data.allClusters.length > 0) {
+          setClusters(data.allClusters);
+        } else {
+          await fetchClusters();
+        }
         await fetchNotifications();
         await fetchOfficerNotifications();
-        if (data.assignedCluster) {
-          setSelectedClusterId(data.assignedCluster.id);
+        if (data.cluster) {
+          setSelectedClusterId(data.cluster.id);
         }
+        return data;
       } else {
         // Local cluster insertion
         setClusters((prev) => {
@@ -349,11 +212,49 @@ export default function App() {
             };
             return updated;
           } else {
-            return prev;
+            return [
+              {
+                id: `cluster-${Date.now()}`,
+                clusterCode: `CL-${Math.floor(1000 + Math.random() * 9000)}`,
+                title: newComplaint.cleanDescription,
+                category: newComplaint.category,
+                department: newComplaint.department,
+                ward: newComplaint.ward,
+                locationName: newComplaint.locationName,
+                coordinates: newComplaint.coordinates,
+                centroidRadiusMeters: 30,
+                status: 'pending',
+                slaHours: 24,
+                reportedAt: new Date().toISOString(),
+                daysPending: 0,
+                affectedCitizenCount: 1,
+                baseSeverity: newComplaint.severity,
+                priorityScore: 85,
+                priorityBreakdown: {
+                  severityScore: newComplaint.severity * 15,
+                  citizenMultiplier: 14,
+                  agingScore: 0,
+                  proximityBoost: 10,
+                  lifeThreatMultiplier: 1.0,
+                  totalScore: 85,
+                  formulaString: 'Standard Score',
+                  explanation: 'Local emergency grievance record',
+                },
+                complaints: [newComplaint],
+                activityLogs: [{
+                  timestamp: new Date().toISOString(),
+                  action: 'CLUSTER_CREATED',
+                  actor: 'Citizen App',
+                  details: `Complaint ${ticketNo} filed`,
+                }],
+              },
+              ...prev,
+            ];
           }
         });
         setNotifications((prev) => [newCitizenNotif, ...prev]);
         setOfficerNotifications((prev) => [newOfficerNotif, ...prev]);
+        return { success: true, complaint: newComplaint };
       }
     } catch (err) {
       console.error('Error submitting complaint:', err);
@@ -370,6 +271,7 @@ export default function App() {
       });
       setNotifications((prev) => [newCitizenNotif, ...prev]);
       setOfficerNotifications((prev) => [newOfficerNotif, ...prev]);
+      return { success: true, complaint: newComplaint };
     }
   };
 
@@ -512,17 +414,21 @@ export default function App() {
     }
   };
 
-  // Reset Data Demo
+  // Reset Database
   const handleResetData = async () => {
     try {
       await fetch('/api/reset', { method: 'POST' });
+      await fetchClusters();
+      await fetchCrews();
+      await fetchNotifications();
+      await fetchOfficerNotifications();
     } catch (e) {
-      // Local fallback
+      console.warn('Reset error:', e);
+      setClusters([]);
+      setNotifications([]);
+      setOfficerNotifications([]);
+      setSelectedClusterId(null);
     }
-    setClusters(INITIAL_SEED_CLUSTERS);
-    setNotifications(INITIAL_CITIZEN_NOTIFICATIONS);
-    setOfficerNotifications(INITIAL_OFFICER_NOTIFICATIONS);
-    setSelectedClusterId(INITIAL_SEED_CLUSTERS[0]?.id || null);
   };
 
   const selectedCluster = clusters.find((c) => c.id === selectedClusterId) || clusters[0] || null;
@@ -540,7 +446,7 @@ export default function App() {
   // =========================================================
   if (userRole === 'citizen') {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
         <CitizenPortal
           citizenUser={citizenUser}
           onLogout={() => setUserRole(null)}
@@ -567,26 +473,10 @@ export default function App() {
   }
 
   // =========================================================
-  // STEP 3: RENDER VOLUNTEER PORTAL IF LOGGED IN AS VOLUNTEER
-  // (Skill-Matched Quick Tasks, Karma Points, AI Verification)
-  // =========================================================
-  if (userRole === 'volunteer') {
-    return (
-      <VolunteerPortal
-        volunteerUser={volunteerUser}
-        volunteerTasks={volunteerTasks}
-        onClaimTask={handleClaimVolunteerTask}
-        onSubmitResolutionProof={handleSubmitVolunteerProof}
-        onLogout={() => setUserRole(null)}
-      />
-    );
-  }
-
-  // =========================================================
-  // STEP 4: RENDER OFFICER DASHBOARD (STRICTLY OFFICER NOTIFICATIONS & QUALIFICATIONS)
+  // STEP 3: RENDER OFFICER DASHBOARD (STRICTLY OFFICER NOTIFICATIONS & QUALIFICATIONS)
   // =========================================================
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-sky-500 selection:text-white font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-sky-500 selection:text-slate-950 font-sans">
       {/* Top Navbar with Officer Role, Dashboard Tabs & Officer Alerts Bell */}
       <Navbar
         activeTab={activeTab}
