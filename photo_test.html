@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NagarAI — Photo Classification Vision AI Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0a0f1e;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 24px;
+      padding: 36px 32px;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .header-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0ea5e9, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 10px 25px rgba(14,165,233,0.3);
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(to right, #38bdf8, #34d399, #2dd4bf);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.sub { font-size: 0.82rem; color: #64748b; margin-top: 2px; }
+
+    /* Drop Zone */
+    .drop-zone {
+      border: 2px dashed #334155;
+      border-radius: 18px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #0f172a;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #0ea5e9;
+      background: #0ea5e910;
+    }
+    .drop-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .drop-text { font-size: 0.85rem; color: #64748b; }
+    .drop-text span { color: #38bdf8; font-weight: 700; cursor: pointer; }
+    .drop-sub { font-size: 0.72rem; color: #475569; margin-top: 6px; }
+
+    #img-preview {
+      max-width: 100%;
+      max-height: 240px;
+      border-radius: 14px;
+      margin-top: 14px;
+      object-fit: cover;
+      display: none;
+      border: 1px solid #334155;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    }
+
+    .samples-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 8px; }
+    .samples-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+    .sample-btn {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      color: #cbd5e1;
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: center;
+    }
+    .sample-btn:hover { border-color: #0ea5e9; background: #0ea5e915; color: #38bdf8; transform: translateY(-1px); }
+
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; display: block; margin-bottom: 4px; }
+    input[type="number"], select {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 0.82rem;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: #0ea5e9; }
+
+    #submit-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0ea5e9, #10b981);
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 10px 25px rgba(16,185,129,0.25);
+    }
+    #submit-btn:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+    #submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #loading { display: none; text-align: center; padding: 24px 0; }
+    #loading.visible { display: block; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #1e293b; border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #result {
+      margin-top: 24px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      display: none;
+    }
+    #result.visible { display: block; }
+    #result.success { border-color: #10b981; }
+    #result.error { border-color: #ef4444; }
+
+    .result-header { font-size: 0.85rem; font-weight: 800; color: #34d399; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .result-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b; font-size: 0.82rem; }
+    .result-row:last-child { border-bottom: none; }
+    .result-key { color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.72rem; }
+    .result-val { color: #f1f5f9; font-weight: 600; text-align: right; max-width: 65%; word-break: break-word; }
+
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    .badge.green { background: #064e3b; color: #34d399; }
+    .badge.blue { background: #1e3a5f; color: #60a5fa; }
+    .badge.amber { background: #451a03; color: #f59e0b; }
+    .badge.red { background: #450a0a; color: #f87171; }
+
+    .priority-bar { height: 8px; border-radius: 4px; background: #1e293b; margin-top: 12px; overflow: hidden; }
+    .priority-fill { height: 100%; border-radius: 4px; background: linear-gradient(to right, #10b981, #f59e0b, #ef4444); transition: width 0.8s ease; }
+
+    details { margin-top: 14px; }
+    summary { cursor: pointer; color: #64748b; font-size: 0.75rem; font-weight: 600; }
+    pre { margin-top: 8px; font-size: 0.72rem; color: #94a3b8; overflow-x: auto; background: #020617; padding: 12px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="header-icon">📷</div>
+    <div>
+      <h1>Photo Vision Classification Test</h1>
+      <p class="sub">YOLOv8 Object Bounding Proposals • CLIP Zero-Shot Classification</p>
+    </div>
+  </div>
+
+  <!-- Drop Zone -->
+  <div class="drop-zone" id="drop-zone">
+    <div class="drop-icon">🖼️</div>
+    <div class="drop-text">Drag & drop your civic issue photo here or <span id="browse-btn">browse files</span></div>
+    <div class="drop-sub">Supports .jpg · .jpeg · .png · .webp</div>
+    <img id="img-preview" alt="Civic Photo Preview" />
+  </div>
+  <input type="file" id="file-input" accept="image/*" style="display:none" />
+
+  <!-- Samples -->
+  <div class="samples-title">⚡ Quick Sample Photos</div>
+  <div class="samples-grid">
+    <button class="sample-btn" onclick="loadSample('pothole')">🕳️ Pothole</button>
+    <button class="sample-btn" onclick="loadSample('garbage')">🗑️ Garbage</button>
+    <button class="sample-btn" onclick="loadSample('waterlogging')">🌊 Waterlogging</button>
+  </div>
+
+  <div class="meta-grid">
+    <div>
+      <label>GPS Latitude</label>
+      <input type="number" id="lat" value="28.6315" step="0.0001" />
+    </div>
+    <div>
+      <label>GPS Longitude</label>
+      <input type="number" id="lng" value="77.2167" step="0.0001" />
+    </div>
+    <div>
+      <label>Sensitive Location?</label>
+      <select id="sensitive">
+        <option value="false">No (Normal)</option>
+        <option value="true">Yes (Hospital/School)</option>
+      </select>
+    </div>
+  </div>
+
+  <button id="submit-btn" disabled>Classify Photo with YOLOv8 + CLIP →</button>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p style="color:#64748b;font-size:0.85rem">Processing image tensor on PyTorch MPS / GPU...</p>
+  </div>
+
+  <!-- Result -->
+  <div id="result">
+    <div class="result-header">
+      <span>AI Vision Classification Output</span>
+      <span id="action-badge"></span>
+    </div>
+    <div id="result-rows"></div>
+    <details>
+      <summary>View raw JSON response</summary>
+      <pre id="raw-json-text"></pre>
+    </details>
+  </div>
+</div>
+
+<script>
+  let selectedFile = null;
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const browseBtn = document.getElementById('browse-btn');
+  const imgPreview = document.getElementById('img-preview');
+  const submitBtn = document.getElementById('submit-btn');
+  const loading = document.getElementById('loading');
+  const result = document.getElementById('result');
+  const resultRows = document.getElementById('result-rows');
+  const actionBadge = document.getElementById('action-badge');
+
+  browseBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleFile(file);
+  });
+
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) handleFile(file);
+  });
+
+  function handleFile(file) {
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+    imgPreview.src = url;
+    imgPreview.style.display = 'block';
+    submitBtn.disabled = false;
+  }
+
+  async function loadSample(type) {
+    const sampleUrls = {
+      pothole: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80',
+      garbage: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&w=800&q=80',
+      waterlogging: 'https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?auto=format&fit=crop&w=800&q=80'
+    };
+
+    try {
+      const resp = await fetch(sampleUrls[type]);
+      const blob = await resp.blob();
+      const file = new File([blob], `${type}_sample.jpg`, { type: 'image/jpeg' });
+      handleFile(file);
+    } catch(err) {
+      alert('Failed to load sample image. Please pick a local photo from your device!');
+    }
+  }
+
+  submitBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    const lat = parseFloat(document.getElementById('lat').value) || 28.6315;
+    const lng = parseFloat(document.getElementById('lng').value) || 77.2167;
+    const sensitive = document.getElementById('sensitive').value === 'true';
+
+    submitBtn.disabled = true;
+    loading.classList.add('visible');
+    result.classList.remove('visible');
+
+    const formData = new FormData();
+    formData.append('image_file', selectedFile, selectedFile.name);
+    formData.append('latitude', lat);
+    formData.append('longitude', lng);
+    formData.append('is_sensitive_location', sensitive);
+
+    try {
+      const resp = await fetch('http://127.0.0.1:8000/api/complaint/submit', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await resp.json();
+      renderResult(data, resp.ok);
+    } catch(err) {
+      renderResult({ error: err.message, hint: 'Ensure server.py is running on port 8000' }, false);
+    } finally {
+      loading.classList.remove('visible');
+      submitBtn.disabled = false;
+    }
+  });
+
+  function badge(text, color) {
+    return `<span class="badge ${color}">${text}</span>`;
+  }
+
+  function renderResult(data, success) {
+    result.classList.add('visible', success ? 'success' : 'error');
+    document.getElementById('raw-json-text').textContent = JSON.stringify(data, null, 2);
+
+    if (!success || data.error) {
+      actionBadge.innerHTML = badge('ERROR', 'red');
+      resultRows.innerHTML = `<div class="result-row"><span class="result-key">Error</span><span class="result-val" style="color:#f87171">${data.error || data.detail}</span></div>`;
+      return;
+    }
+
+    const priority = data.priority_score || 0;
+    const isMerged = data.action === 'merged';
+    actionBadge.innerHTML = isMerged ? badge('DEDUPLICATED (MERGED)', 'blue') : badge('NEW MASTER CLUSTER', 'green');
+
+    const sevColor = data.severity >= 4 ? 'red' : data.severity >= 3 ? 'amber' : 'green';
+
+    resultRows.innerHTML = `
+      <div class="result-row"><span class="result-key">Complaint ID</span><span class="result-val" style="font-family:monospace;color:#34d399">${data.complaint_id}</span></div>
+      <div class="result-row"><span class="result-key">Cluster ID</span><span class="result-val" style="font-family:monospace;color:#60a5fa">${data.cluster_id}</span></div>
+      <div class="result-row"><span class="result-key">Detected Category</span><span class="result-val">${badge((data.category || 'other').replace(/_/g,' ').toUpperCase(), 'blue')}</span></div>
+      <div class="result-row"><span class="result-key">Severity Level</span><span class="result-val">${badge('Level ' + data.severity + '/5', sevColor)}</span></div>
+      <div class="result-row"><span class="result-key">AI Summary</span><span class="result-val">${data.summary || '—'}</span></div>
+      <div class="result-row"><span class="result-key">Department Routed</span><span class="result-val" style="color:#38bdf8">${data.department || 'Roads & PWD'}</span></div>
+      <div class="result-row"><span class="result-key">Affected Citizens</span><span class="result-val">👥 ${data.affected_citizens || 1}</span></div>
+      <div class="result-row"><span class="result-key">Priority Score</span><span class="result-val" style="color:${priority>=80?'#f87171':priority>=50?'#f59e0b':'#34d399'};font-size:1.2rem;font-weight:900">${priority} / 100</span></div>
+    `;
+
+    resultRows.innerHTML += `<div class="priority-bar"><div class="priority-fill" style="width:${priority}%"></div></div>`;
+  }
+</script>
+</body>
+</html>
