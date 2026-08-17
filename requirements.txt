@@ -1,12 +1,31 @@
-# NagarAI Hackathon PS-S05 ML & Deduplication Pipeline
-openai>=1.0.0
-torch
-torchaudio
-transformers
-ultralytics
-clip @ git+https://github.com/openai/CLIP.git
-sentence-transformers
-soundfile
-scipy
-numpy
-librosa
+# NagarAI Civic Complaint Intelligence Engine (PS-S05)
+# Core Python ML Engine & Server Requirements
+
+# Web Server & API Framework
+fastapi>=0.110.0
+uvicorn>=0.28.0
+python-multipart>=0.0.9
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+python-dotenv>=1.0.0
+
+# Deep Learning & Visual Intelligence (Task 2 - YOLOv8 & CLIP)
+torch>=2.2.0
+torchvision>=0.17.0
+ultralytics>=8.1.0
+git+https://github.com/openai/CLIP.git
+pillow>=10.2.0
+
+# Audio Speech Recognition ASR (Task 1 - Whisper & IndicConformer)
+transformers>=4.38.0
+soundfile>=0.12.1
+
+# Text Embeddings & Vector NLP (Task 3 - Sentence Transformers)
+sentence-transformers>=2.5.0
+numpy>=1.26.0
+
+# PostgreSQL + PostGIS + pgvector Database Engine
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
+geoalchemy2>=0.14.0
+pgvector>=0.2.5
