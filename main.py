@@ -70,7 +70,8 @@ def process_civic_complaint(
         "image_path": image_path,
         "category": category,
         "severity": severity,
-        "is_sensitive_location": is_sensitive_location
+        "is_sensitive_location": is_sensitive_location,
+        "days_pending": days_pending
     }
 
     # Step 4 & 5: Deduplication & Priority Calculation

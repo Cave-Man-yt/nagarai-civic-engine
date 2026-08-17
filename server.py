@@ -74,9 +74,18 @@ async def submit_complaint(
     longitude: float = Form(77.2167),
     is_sensitive_location: bool = Form(False),
     days_pending: float = Form(0.0),
+    sensitive: Optional[bool] = Form(None),
+    days: Optional[float] = Form(None),
     audio_file: Optional[UploadFile] = File(None),
     image_file: Optional[UploadFile] = File(None)
 ):
+    import math
+    if math.isnan(latitude): latitude = 28.6315
+    if math.isnan(longitude): longitude = 77.2167
+    
+    actual_sensitive = sensitive if sensitive is not None else is_sensitive_location
+    actual_days = days if days is not None else days_pending
+    
     saved_audio_path = None
     saved_image_path = None
 
@@ -101,7 +110,8 @@ async def submit_complaint(
         raw_text=raw_text,
         latitude=latitude,
         longitude=longitude,
-        is_sensitive_location=is_sensitive_location,
+        is_sensitive_location=actual_sensitive,
+        days_pending=actual_days,
         store=DEFAULT_STORE
     )
 
