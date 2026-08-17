@@ -350,8 +350,8 @@
 
   submitBtn.addEventListener('click', async () => {
     const text = document.getElementById('text-input').value.trim();
-    const lat = parseFloat(document.getElementById('lat').value);
-    const lng = parseFloat(document.getElementById('lng').value);
+    const lat = parseFloat(document.getElementById('lat').value) || 28.6315;
+    const lng = parseFloat(document.getElementById('lng').value) || 77.2167;
     const days = parseFloat(document.getElementById('days').value) || 0;
     const sensitive = document.getElementById('sensitive').value.toLowerCase() === 'true';
 
