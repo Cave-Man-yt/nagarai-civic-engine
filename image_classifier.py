@@ -17,13 +17,15 @@ _CLIP_PREPROCESS = None
 # Default civic issue mapping for severity rating (1-5)
 CIVIC_SEVERITY_MAP = {
     "pothole": 4,
-    "garbage": 3,
+    "garbage_dump": 3,
     "waterlogging": 4,
-    "streetlight": 2,
+    "broken_streetlight": 2,
     "broken_road": 3,
     "open_manhole": 5,
-    "illegal_dumping": 3,
-    "traffic_signal": 4
+    "traffic_signal": 4,
+    "fallen_tree": 3,
+    "stray_animals": 2,
+    "illegal_parking": 2
 }
 
 
@@ -71,7 +73,7 @@ def load_clip_model():
 
 def classify_image(image_path: str) -> Dict[str, Any]:
     """
-    Detects civic issues in input image using YOLOv8 or zero-shot CLIP classification.
+    Detects civic issues in input image using zero-shot CLIP classification.
 
     Args:
         image_path (str): Path to local image file (.jpg, .png, etc.)
@@ -83,35 +85,14 @@ def classify_image(image_path: str) -> Dict[str, Any]:
         logger.error(f"Image file not found: {image_path}")
         return {"category": "unknown", "severity": 1, "confidence": 0.0}
 
-    # 1. Try YOLOv8 object detection
-    yolo = load_yolo_model()
-    if yolo is not None:
-        try:
-            results = yolo(image_path)
-            if results and len(results) > 0:
-                boxes = results[0].boxes
-                if len(boxes) > 0:
-                    top_box = boxes[0]
-                    cls_id = int(top_box.cls[0].item())
-                    conf = float(top_box.conf[0].item())
-                    label = results[0].names.get(cls_id, "civic_issue")
-                    severity = CIVIC_SEVERITY_MAP.get(label.lower(), 3)
-                    return {
-                        "category": label,
-                        "severity": severity,
-                        "confidence": round(conf, 4)
-                    }
-        except Exception as e:
-            logger.warning(f"YOLO detection failed: {e}")
-
-    # 2. Zero-shot classification fallback using CLIP if available
+    # Primary: Zero-shot classification using CLIP (Much better than YOLO COCO for zero-shot civic issues)
     clip_model, clip_preprocess = load_clip_model()
     if clip_model is not None and clip_preprocess is not None:
         try:
             import torch
             import clip
             from PIL import Image
-            categories = ["pothole", "garbage dump", "waterlogging", "broken streetlight", "open manhole"]
+            categories = ["pothole", "garbage dump", "waterlogging", "broken streetlight", "open manhole", "traffic signal", "fallen tree", "stray animals", "illegal parking", "normal street"]
             device = next(clip_model.parameters()).device
 
             image = clip_preprocess(Image.open(image_path)).unsqueeze(0).to(device)
@@ -125,10 +106,14 @@ def classify_image(image_path: str) -> Dict[str, Any]:
             best_idx = int(probs.argmax())
             best_cat = categories[best_idx]
             best_conf = float(probs[best_idx])
+            
+            if best_cat == "normal street":
+                 return {"category": "other", "severity": 1, "confidence": round(best_conf, 4)}
+
             severity = CIVIC_SEVERITY_MAP.get(best_cat.replace(" ", "_"), 3)
 
             return {
-                "category": best_cat,
+                "category": best_cat.replace(" ", "_"),
                 "severity": severity,
                 "confidence": round(best_conf, 4)
             }
