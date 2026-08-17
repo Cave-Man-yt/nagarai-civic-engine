@@ -68,13 +68,27 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           )}
           <button
+            onClick={async () => {
+              if (confirm("Clear all database complaints and start completely fresh with 0 complaints?")) {
+                await fetch('/api/clear', { method: 'POST' });
+                window.location.reload();
+              }
+            }}
+            title="Wipe database and start completely fresh"
+            className="flex items-center gap-1 text-rose-300 hover:text-rose-100 transition-colors text-[11px] cursor-pointer font-bold bg-rose-500/20 px-2 py-0.5 rounded-md border border-rose-500/40"
+          >
+            <RotateCcw className="w-3 h-3 text-rose-400" />
+            🗑️ Start Fresh (Wipe All)
+          </button>
+          <button
             onClick={onResetData}
-            title="Reset system to default seed state"
+            title="Reset system to default sample seed state"
             className="flex items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors text-[11px] cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
-            Reset Demo
+            Load Samples
           </button>
+
         </div>
       </div>
 

@@ -831,6 +831,15 @@ Return JSON:
     res.json({ success: true, notification: notif });
   });
 
+  // Clear all database clusters and complaints to start completely fresh
+  app.post('/api/clear', (req, res) => {
+    masterClusters = [];
+    allComplaints = [];
+    notifications = [];
+    officerNotifications = [];
+    res.json({ success: true, message: "Database wiped. Starting completely fresh with 0 complaints!", clusters: [], notifications: [], officerNotifications: [] });
+  });
+
   // Reset demo state to initial seed
   app.post('/api/reset', (req, res) => {
     masterClusters = getInitialSeedClusters();
@@ -840,6 +849,7 @@ Return JSON:
     officerNotifications = [...INITIAL_OFFICER_NOTIFICATIONS];
     res.json({ success: true, clusters: masterClusters, notifications, officerNotifications });
   });
+
 
   // Vite middleware for development vs Static files in production
   if (process.env.NODE_ENV !== 'production') {

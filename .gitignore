@@ -4,12 +4,16 @@ venv/
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
 
 # Node / JS
 node_modules/
 dist/
+
+# Environment & Secrets
 .env
 .env.local
+.env.production
 
 # Media Uploads & Cache
 uploads/*
@@ -17,5 +21,21 @@ uploads/*
 .cache/
 .DS_Store
 
-# PyTorch & Model Cache
+# PyTorch & Model Weights
 *.pt
+*.pth
+*.onnx
+
+# Test Fixtures (large binary)
+test_fixtures/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Build artifacts
+*.log
