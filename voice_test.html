@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NagarAI — Voice Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0a0f1e;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 20px;
+      padding: 36px 32px;
+      max-width: 540px;
+      width: 100%;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .logo-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+    h1 { font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right,#38bdf8,#34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    p.sub { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+
+    .mic-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 32px 0;
+      border: 2px dashed #1e293b;
+      border-radius: 16px;
+      margin: 20px 0;
+      transition: all 0.3s;
+    }
+    .mic-area.recording {
+      border-color: #ef4444;
+      background: #ef444408;
+    }
+    #mic-btn {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 2rem;
+      transition: all 0.2s;
+      background: linear-gradient(135deg, #0ea5e9, #10b981);
+      box-shadow: 0 0 0 0 rgba(14,165,233,0.4);
+    }
+    #mic-btn.recording {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      animation: ripple 1s infinite;
+    }
+    @keyframes ripple { 0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)} 100%{box-shadow:0 0 0 20px rgba(239,68,68,0)} }
+    #mic-btn:hover { transform: scale(1.08); }
+    #status-text { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+    #status-text.active { color: #f87171; }
+    #timer { font-size: 1.4rem; font-weight: 800; color: #e2e8f0; font-variant-numeric: tabular-nums; display: none; }
+    #timer.visible { display: block; }
+
+    audio { width: 100%; border-radius: 8px; margin-top: 8px; display: none; }
+    audio.visible { display: block; }
+
+    .upload-zone {
+      border: 2px dashed #334155;
+      border-radius: 14px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #0f172a;
+      margin: 12px 0;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: #0ea5e9;
+      background: #0ea5e910;
+    }
+    .upload-zone .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+    .upload-zone p { font-size: 0.82rem; color: #64748b; }
+    .upload-zone span { color: #38bdf8; font-weight: 600; cursor: pointer; }
+    .file-chosen { font-size: 0.78rem; color: #34d399; margin-top: 6px; font-weight: 600; display: none; }
+    .file-chosen.visible { display: block; }
+
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    label { font-size: 0.75rem; font-weight: 600; color: #94a3b8; display: block; margin-bottom: 4px; }
+    input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #0ea5e9; }
+    .field-full { grid-column: 1 / -1; }
+
+    #submit-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0ea5e9, #10b981);
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      margin-top: 8px;
+    }
+    #submit-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    #submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #result {
+      margin-top: 20px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      font-size: 0.82rem;
+      display: none;
+    }
+    #result.visible { display: block; }
+    #result.success { border-color: #10b981; }
+    #result.error { border-color: #ef4444; }
+
+    .result-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #1e293b; }
+    .result-row:last-child { border-bottom: none; }
+    .result-key { color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .result-val { color: #e2e8f0; font-weight: 600; text-align: right; max-width: 65%; word-break: break-word; }
+    .badge { padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+    .badge.green { background: #064e3b; color: #34d399; }
+    .badge.blue { background: #1e3a5f; color: #60a5fa; }
+    .badge.red { background: #450a0a; color: #f87171; }
+    .priority-bar { height: 6px; border-radius: 3px; background: #1e293b; margin-top: 10px; overflow: hidden; }
+    .priority-fill { height: 100%; border-radius: 3px; background: linear-gradient(to right, #10b981, #f59e0b, #ef4444); transition: width 0.8s ease; }
+    .raw-json { margin-top: 12px; }
+    .raw-json summary { cursor: pointer; color: #64748b; font-size: 0.75rem; }
+    .raw-json pre { margin-top: 8px; font-size: 0.72rem; color: #94a3b8; overflow-x: auto; white-space: pre-wrap; }
+
+    .divider { text-align: center; color: #334155; font-size: 0.75rem; margin: 12px 0; }
+    #loading { display: none; text-align: center; padding: 20px; }
+    #loading.visible { display: block; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #1e293b; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <div>
+      <h1>NagarAI Voice Test</h1>
+      <p class="sub">Record your complaint → AI classifies & prioritises live</p>
+    </div>
+  </div>
+
+  <!-- Mic Recorder -->
+  <div class="mic-area" id="mic-area">
+    <button id="mic-btn" title="Click to record">🎙️</button>
+    <div id="timer" class=""></div>
+    <div id="status-text">Click the mic to start recording</div>
+    <audio id="audio-preview" controls></audio>
+  </div>
+
+  <div class="divider">— or upload a voice file —</div>
+
+  <!-- File Upload Drop Zone -->
+  <div class="upload-zone" id="upload-zone">
+    <div class="upload-icon">📁</div>
+    <p>Drag & drop your voice file here</p>
+    <p style="margin-top:4px">or <span id="browse-btn">browse files</span></p>
+    <p style="margin-top:6px;font-size:0.72rem;color:#475569">Supports .wav · .mp3 · .m4a · .webm · .ogg</p>
+    <div class="file-chosen" id="file-chosen-label"></div>
+    <audio id="upload-audio-preview" controls style="width:100%;margin-top:10px;display:none;"></audio>
+  </div>
+  <input type="file" id="file-input" accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg" style="display:none" />
+
+  <div class="divider">— or paste a text description —</div>
+
+  <!-- Fields -->
+  <div class="fields">
+    <div class="field-full">
+      <label>Text Complaint (optional)</label>
+      <input type="text" id="text-input" placeholder="e.g. Large pothole near school gate, Sector 12…" />
+    </div>
+    <div>
+      <label>GPS Latitude</label>
+      <input type="number" id="lat" value="28.6315" step="0.0001" />
+    </div>
+    <div>
+      <label>GPS Longitude</label>
+      <input type="number" id="lng" value="77.2167" step="0.0001" />
+    </div>
+    <div>
+      <label>Days Pending</label>
+      <input type="number" id="days" value="0" min="0" />
+    </div>
+    <div>
+      <label>Sensitive Location?</label>
+      <input type="text" id="sensitive" value="false" placeholder="true / false" />
+    </div>
+  </div>
+
+  <button id="submit-btn" disabled>Submit to ML Backend →</button>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p style="color:#64748b;font-size:0.85rem">AI is processing your complaint…<br>YOLOv8 + CLIP + Whisper + Deduplication</p>
+  </div>
+
+  <!-- Result -->
+  <div id="result">
+    <div id="result-rows"></div>
+    <details class="raw-json">
+      <summary>View raw JSON response</summary>
+      <pre id="raw-json-text"></pre>
+    </details>
+  </div>
+</div>
+
+<script>
+  let mediaRecorder, audioChunks = [], audioBlob = null;
+  let timerInterval, seconds = 0;
+
+  const micBtn = document.getElementById('mic-btn');
+  const micArea = document.getElementById('mic-area');
+  const statusText = document.getElementById('status-text');
+  const timerEl = document.getElementById('timer');
+  const audioPreview = document.getElementById('audio-preview');
+  const submitBtn = document.getElementById('submit-btn');
+  const loading = document.getElementById('loading');
+  const result = document.getElementById('result');
+  const resultRows = document.getElementById('result-rows');
+
+  function formatTime(s) {
+    return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  }
+
+  micBtn.addEventListener('click', async () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      // Stop recording
+      mediaRecorder.stop();
+      clearInterval(timerInterval);
+      micBtn.textContent = '🎙️';
+      micBtn.classList.remove('recording');
+      micArea.classList.remove('recording');
+      statusText.classList.remove('active');
+      statusText.textContent = 'Processing recording…';
+      timerEl.classList.remove('visible');
+    } else {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const url = URL.createObjectURL(audioBlob);
+          audioPreview.src = url;
+          audioPreview.classList.add('visible');
+          statusText.textContent = `✅ Recording saved (${formatTime(seconds)}) — ready to submit`;
+          statusText.classList.remove('active');
+          submitBtn.disabled = false;
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        seconds = 0;
+        timerEl.textContent = formatTime(0);
+        timerEl.classList.add('visible');
+        timerInterval = setInterval(() => { seconds++; timerEl.textContent = formatTime(seconds); }, 1000);
+        micBtn.textContent = '⏹️';
+        micBtn.classList.add('recording');
+        micArea.classList.add('recording');
+        statusText.textContent = '🔴 Recording… speak your complaint now';
+        statusText.classList.add('active');
+        submitBtn.disabled = true;
+      } catch(err) {
+        statusText.textContent = '❌ Microphone access denied. Please allow mic access.';
+      }
+    }
+  });
+
+  // Also enable submit if text is typed
+  document.getElementById('text-input').addEventListener('input', e => {
+    if (e.target.value.trim().length > 2) submitBtn.disabled = false;
+    else if (!audioBlob && !uploadedFile) submitBtn.disabled = true;
+  });
+
+  // --- File Upload Logic ---
+  let uploadedFile = null;
+  const uploadZone = document.getElementById('upload-zone');
+  const fileInput = document.getElementById('file-input');
+  const fileChosenLabel = document.getElementById('file-chosen-label');
+  const uploadAudioPreview = document.getElementById('upload-audio-preview');
+
+  document.getElementById('browse-btn').addEventListener('click', () => fileInput.click());
+  uploadZone.addEventListener('click', e => { if (e.target.id !== 'browse-btn') fileInput.click(); });
+
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) handleUploadedFile(file);
+  });
+
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('audio')) handleUploadedFile(file);
+    else alert('Please drop an audio file (.wav, .mp3, .m4a, .webm, .ogg)');
+  });
+
+  function handleUploadedFile(file) {
+    uploadedFile = file;
+    audioBlob = null; // clear any recorded blob
+    audioPreview.classList.remove('visible'); // hide recorder preview
+    fileChosenLabel.textContent = `✅ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    fileChosenLabel.classList.add('visible');
+    const url = URL.createObjectURL(file);
+    uploadAudioPreview.src = url;
+    uploadAudioPreview.style.display = 'block';
+    submitBtn.disabled = false;
+    statusText.textContent = `File loaded: ${file.name}`;
+  }
+
+  submitBtn.addEventListener('click', async () => {
+    const text = document.getElementById('text-input').value.trim();
+    const lat = parseFloat(document.getElementById('lat').value);
+    const lng = parseFloat(document.getElementById('lng').value);
+    const days = parseFloat(document.getElementById('days').value) || 0;
+    const sensitive = document.getElementById('sensitive').value.toLowerCase() === 'true';
+
+    if (!audioBlob && !uploadedFile && !text) {
+      alert('Please record your voice, upload a voice file, or type a complaint description first!');
+      return;
+    }
+
+    // Show loading
+    submitBtn.disabled = true;
+    loading.classList.add('visible');
+    result.classList.remove('visible');
+
+    const formData = new FormData();
+    if (text) formData.append('raw_text', text);
+    formData.append('latitude', lat);
+    formData.append('longitude', lng);
+    formData.append('days_pending', days);
+    formData.append('is_sensitive_location', sensitive);
+    if (audioBlob) formData.append('audio_file', audioBlob, 'voice_complaint.webm');
+    else if (uploadedFile) formData.append('audio_file', uploadedFile, uploadedFile.name);
+
+    try {
+      const resp = await fetch('http://127.0.0.1:8000/api/complaint/submit', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await resp.json();
+      renderResult(data, resp.ok);
+    } catch(err) {
+      renderResult({ error: err.message, hint: 'Make sure server.py is running on port 8000' }, false);
+    } finally {
+      loading.classList.remove('visible');
+      submitBtn.disabled = false;
+    }
+  });
+
+  function badge(text, color) {
+    return `<span class="badge ${color}">${text}</span>`;
+  }
+
+  function renderResult(data, success) {
+    result.classList.add('visible', success ? 'success' : 'error');
+    document.getElementById('raw-json-text').textContent = JSON.stringify(data, null, 2);
+
+    if (!success || data.error) {
+      resultRows.innerHTML = `<div class="result-row"><span class="result-key">Error</span><span class="result-val" style="color:#f87171">${data.error || data.detail || 'Unknown error'}</span></div>
+      ${data.hint ? `<div class="result-row"><span class="result-key">Hint</span><span class="result-val">${data.hint}</span></div>` : ''}`;
+      return;
+    }
+
+    const priority = data.priority_score || 0;
+    const actionBadge = data.action === 'merged' ? badge('MERGED (Duplicate)', 'blue') : badge('NEW CLUSTER', 'green');
+    const sevColor = data.severity >= 4 ? 'red' : data.severity >= 3 ? 'blue' : 'green';
+
+    resultRows.innerHTML = `
+      <div class="result-row"><span class="result-key">Ticket ID</span><span class="result-val" style="font-family:monospace;color:#34d399">${data.complaint_id || data.id || '—'}</span></div>
+      <div class="result-row"><span class="result-key">Cluster</span><span class="result-val" style="font-family:monospace;color:#60a5fa">${data.cluster_id || '—'}</span></div>
+      <div class="result-row"><span class="result-key">Action</span><span class="result-val">${actionBadge}</span></div>
+      <div class="result-row"><span class="result-key">Category</span><span class="result-val">${badge((data.category || '—').replace(/_/g,' ').toUpperCase(), 'blue')}</span></div>
+      <div class="result-row"><span class="result-key">Severity</span><span class="result-val">${badge('Level ' + (data.severity || '—'), sevColor)}</span></div>
+      <div class="result-row"><span class="result-key">Summary (AI)</span><span class="result-val">${data.summary || data.description || '—'}</span></div>
+      ${data.transcription ? `<div class="result-row"><span class="result-key">Transcription</span><span class="result-val">${data.transcription}</span></div>` : ''}
+      ${data.department ? `<div class="result-row"><span class="result-key">Department Routed</span><span class="result-val">${data.department}</span></div>` : ''}
+      <div class="result-row"><span class="result-key">Affected Citizens</span><span class="result-val">👥 ${data.affected_citizens || 1}</span></div>
+      <div class="result-row"><span class="result-key">Priority Score</span><span class="result-val" style="color:${priority>=80?'#f87171':priority>=50?'#fbbf24':'#34d399'};font-size:1.2rem;font-weight:900">${priority} / 100</span></div>
+    `;
+
+    // Priority bar
+    resultRows.innerHTML += `<div class="priority-bar"><div class="priority-fill" style="width:${priority}%"></div></div>`;
+  }
+</script>
+</body>
+</html>
