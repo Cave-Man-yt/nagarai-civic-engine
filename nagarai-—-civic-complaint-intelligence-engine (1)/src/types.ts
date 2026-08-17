@@ -127,12 +127,66 @@ export interface MasterCluster {
   }>;
 }
 
+export type UserRole = 'citizen' | 'officer' | 'volunteer';
+
+export type VolunteerSkillCategory = 
+  | 'waste_management'
+  | 'electrical_lighting'
+  | 'road_pothole'
+  | 'drainage_water'
+  | 'greenery_trees'
+  | 'traffic_guidance'
+  | 'disaster_relief'
+  | 'elderly_assistance'
+  | 'general_civic';
+
+export interface CitizenUser {
+  name: string;
+  phone: string;
+  email?: string;
+  ward?: string;
+  preferredLanguage?: string;
+  address?: string;
+  isNewUser?: boolean;
+}
+
+export interface OfficerUser {
+  name: string;
+  phone: string;
+  email?: string;
+  badgeId?: string;
+  department: string;
+  designation?: string;
+  zonalDivision?: string;
+  isNewUser?: boolean;
+}
+
+export interface VolunteerUser {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  ward: string;
+  primarySkill: VolunteerSkillCategory;
+  skills: VolunteerSkillCategory[];
+  experienceLevel: 'Beginner / Enthusiast' | '1-2 Years Active Volunteer' | '3-5+ Years Civic Specialist';
+  experienceDetails: string;
+  ngoAffiliation?: string;
+  availability: string;
+  karmaPoints: number;
+  tasksCompletedCount: number;
+  badges: string[];
+  isNewUser?: boolean;
+  joinedAt?: string;
+}
+
 export interface VolunteerTask {
   id: string;
   clusterId: string;
   clusterCode: string;
   title: string;
   category: ComplaintCategory;
+  requiredSkill?: VolunteerSkillCategory;
   locationName: string;
   ward: string;
   severity: number; // 1 or 2

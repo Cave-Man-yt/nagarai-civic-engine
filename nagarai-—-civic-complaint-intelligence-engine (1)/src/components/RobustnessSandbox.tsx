@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
   Volume2, 
@@ -6,6 +6,7 @@ import {
   Camera, 
   Sparkles, 
   Play, 
+  Pause,
   CheckCircle, 
   ArrowRight, 
   AlertTriangle,
@@ -13,11 +14,41 @@ import {
   RotateCw
 } from 'lucide-react';
 import { SAMPLE_CIVIC_PHOTOS } from '../data/mockData';
+import { speakWording, stopSpeaking } from '../utils/speechUtils';
 
 export const RobustnessSandbox: React.FC = () => {
   const [activeTest, setActiveTest] = useState<'noise' | 'codeswitch' | 'sideways'>('noise');
   const [isRunning, setIsRunning] = useState(false);
   const [testResult, setTestResult] = useState<any | null>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
+  const handlePlayVoice = (text: string, lang: string) => {
+    if (isPlayingAudio) {
+      stopSpeaking();
+      setIsPlayingAudio(false);
+      return;
+    }
+
+    setIsPlayingAudio(true);
+    const spoken = speakWording({
+      text,
+      language: lang,
+      rate: 0.95,
+      onStart: () => setIsPlayingAudio(true),
+      onEnd: () => setIsPlayingAudio(false),
+      onError: () => setIsPlayingAudio(false),
+    });
+
+    if (!spoken) {
+      setIsPlayingAudio(false);
+    }
+  };
 
   // Test 1: Heavy Noise / Background Traffic
   const runNoiseTest = () => {
@@ -92,16 +123,16 @@ export const RobustnessSandbox: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Header Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-950/60 via-slate-900 to-indigo-950/60 border border-purple-500/30 shadow-2xl">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-50 via-indigo-50/70 to-slate-50 border border-purple-200 shadow-sm">
         <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-            <ShieldCheck className="w-4 h-4 text-purple-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+            <ShieldCheck className="w-4 h-4 text-purple-700" />
             Intake Robustness &amp; Multimodal Resilience Sandbox
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Testing Extreme Real-World Civic Edge Cases
           </h2>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-slate-600 font-medium">
             Demonstrates how NagarAI gracefully parses ambient noise, code-switching dialects (Tanglish/Hinglish), and uncurated mobile phone photos without clerk intervention.
           </p>
         </div>
@@ -117,20 +148,20 @@ export const RobustnessSandbox: React.FC = () => {
           }}
           className={`p-5 rounded-3xl border transition-all cursor-pointer ${
             activeTest === 'noise'
-              ? 'bg-slate-900 border-purple-500 ring-2 ring-purple-500/20 shadow-lg'
-              : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+              ? 'bg-white border-purple-500 ring-2 ring-purple-400/20 shadow-md'
+              : 'bg-white/80 border-slate-200 hover:border-slate-300 shadow-2xs'
           }`}
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-700">
               <Volume2 className="w-5 h-5" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-950 px-2 py-0.5 rounded border border-amber-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-mono">
               Test #1
             </span>
           </div>
-          <h3 className="text-base font-bold text-white mb-1">Market Noise &amp; Traffic Chatter</h3>
-          <p className="text-xs text-slate-400">
+          <h3 className="text-base font-bold text-slate-900 mb-1">Market Noise &amp; Traffic Chatter</h3>
+          <p className="text-xs text-slate-500 font-medium">
             Audio recorded in 60dB street background with horns and vendor shouting.
           </p>
         </div>
@@ -143,20 +174,20 @@ export const RobustnessSandbox: React.FC = () => {
           }}
           className={`p-5 rounded-3xl border transition-all cursor-pointer ${
             activeTest === 'codeswitch'
-              ? 'bg-slate-900 border-purple-500 ring-2 ring-purple-500/20 shadow-lg'
-              : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+              ? 'bg-white border-purple-500 ring-2 ring-purple-400/20 shadow-md'
+              : 'bg-white/80 border-slate-200 hover:border-slate-300 shadow-2xs'
           }`}
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-sky-500/20 flex items-center justify-center text-sky-400">
+            <div className="w-10 h-10 rounded-2xl bg-sky-100 flex items-center justify-center text-sky-700">
               <Languages className="w-5 h-5" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 bg-sky-950 px-2 py-0.5 rounded border border-sky-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-sky-800 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 font-mono">
               Test #2
             </span>
           </div>
-          <h3 className="text-base font-bold text-white mb-1">Tanglish &amp; Hinglish Rants</h3>
-          <p className="text-xs text-slate-400">
+          <h3 className="text-base font-bold text-slate-900 mb-1">Tanglish &amp; Hinglish Rants</h3>
+          <p className="text-xs text-slate-500 font-medium">
             Informal mixed-language text filled with regional slang and urgency cues.
           </p>
         </div>
@@ -169,20 +200,20 @@ export const RobustnessSandbox: React.FC = () => {
           }}
           className={`p-5 rounded-3xl border transition-all cursor-pointer ${
             activeTest === 'sideways'
-              ? 'bg-slate-900 border-purple-500 ring-2 ring-purple-500/20 shadow-lg'
-              : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+              ? 'bg-white border-purple-500 ring-2 ring-purple-400/20 shadow-md'
+              : 'bg-white/80 border-slate-200 hover:border-slate-300 shadow-2xs'
           }`}
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-400">
+            <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-700">
               <Camera className="w-5 h-5" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 bg-rose-950 px-2 py-0.5 rounded border border-rose-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-mono">
               Test #3
             </span>
           </div>
-          <h3 className="text-base font-bold text-white mb-1">Sideways / Twilight Photos</h3>
-          <p className="text-xs text-slate-400">
+          <h3 className="text-base font-bold text-slate-900 mb-1">Sideways / Twilight Photos</h3>
+          <p className="text-xs text-slate-500 font-medium">
             Uncorrected EXIF rotation and low-light hazard auto-detection.
           </p>
         </div>
@@ -190,52 +221,83 @@ export const RobustnessSandbox: React.FC = () => {
 
       {/* Results Comparison Sandbox */}
       {testResult ? (
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-6 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div>
-              <span className="text-xs font-mono font-bold text-purple-400 uppercase">Live Evaluation Output</span>
-              <h3 className="text-lg font-bold text-white">{testResult.title}</h3>
+              <span className="text-xs font-mono font-bold text-purple-700 uppercase">Live Evaluation Output</span>
+              <h3 className="text-lg font-bold text-slate-900">{testResult.title}</h3>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-              <CheckCircle className="w-3.5 h-3.5" /> PASSED
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> PASSED
             </span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Raw Input vs Preprocessing */}
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-2">
-                <div className="font-bold text-slate-400">1. RAW UNCURATED INPUT:</div>
-                <p className="text-slate-200 italic p-3 bg-slate-900 rounded-xl border border-slate-800">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="font-bold text-slate-700">1. RAW UNCURATED INPUT:</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textToSpeak = activeTest === 'noise' 
+                        ? 'தம்பி! அண்ணா சாலை LIC முன்னாடி பெரிய பள்ளம் இருக்கு பார்த்து போங்க... ஒருத்தன் வழுக்கிட்டான்!'
+                        : activeTest === 'codeswitch'
+                        ? 'Bro Koyambedu market entry gate la one open manhole cover totally broken ya... urgently fix pannunga'
+                        : 'Snapped live 440V distribution wire hanging near school entrance';
+                      const lang = activeTest === 'noise' ? 'Tamil' : activeTest === 'codeswitch' ? 'Tamil' : 'English';
+                      handlePlayVoice(textToSpeak, lang);
+                    }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer shadow-2xs ${
+                      isPlayingAudio
+                        ? 'bg-amber-500 text-slate-950 ring-1 ring-amber-300'
+                        : 'bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-300'
+                    }`}
+                  >
+                    {isPlayingAudio ? (
+                      <>
+                        <Pause className="w-3 h-3 text-slate-950" />
+                        <span>Stop Voice</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3 h-3 text-purple-700" />
+                        <span>Play Voice / Tell Wordings</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-slate-800 italic p-3 bg-white rounded-xl border border-slate-200 font-medium">
                   {testResult.rawInput}
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-800/40 text-xs space-y-2">
-                <div className="font-bold text-indigo-300 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> 2. AI RESILIENCE LAYER:
+              <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 text-xs space-y-2">
+                <div className="font-bold text-indigo-900 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" /> 2. AI RESILIENCE LAYER:
                 </div>
-                <p className="text-slate-300">{testResult.noiseFiltering}</p>
-                <div className="p-2.5 bg-slate-950 rounded-lg text-emerald-300 font-mono text-[11px]">
+                <p className="text-slate-700 font-medium">{testResult.noiseFiltering}</p>
+                <div className="p-2.5 bg-white rounded-lg text-emerald-800 font-mono text-[11px] border border-emerald-200 font-semibold">
                   &rarr; {testResult.englishTranslation}
                 </div>
               </div>
             </div>
 
             {/* Clean JSON Output */}
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-2">
-              <div className="font-bold text-slate-400 flex items-center gap-2">
-                <FileCode className="w-4 h-4 text-sky-400" />
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <div className="font-bold text-slate-700 flex items-center gap-2">
+                <FileCode className="w-4 h-4 text-sky-600" />
                 3. STANDARDIZED MUNICIPAL SCHEMA OUTPUT:
               </div>
-              <pre className="p-4 rounded-xl bg-slate-900 text-emerald-400 font-mono text-[11px] overflow-x-auto border border-slate-800">
+              <pre className="p-4 rounded-xl bg-white text-emerald-800 font-mono text-[11px] overflow-x-auto border border-slate-200 shadow-2xs font-semibold">
                 {JSON.stringify(testResult.extractedData, null, 2)}
               </pre>
             </div>
           </div>
         </div>
       ) : (
-        <div className="p-12 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-3xl">
+        <div className="p-12 text-center text-slate-500 text-xs border border-dashed border-slate-300 rounded-3xl bg-white/50">
           Click any of the 3 test cases above to trigger live multimodal resilience evaluation.
         </div>
       )}

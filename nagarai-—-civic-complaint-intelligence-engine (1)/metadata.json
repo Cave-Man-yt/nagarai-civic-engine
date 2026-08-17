@@ -1,6 +1,12 @@
 {
-  "name": "NagarAI — Civic Complaint Intelligence Engine",
-  "description": "AI layer for municipal grievance systems featuring regional voice/photo/text intake, embedding & geo deduplication clustering, explainable priority ranking, and official map dashboard with closed-loop verification.",
-  "requestFramePermissions": ["camera", "microphone", "geolocation"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "name": "Remix NagarAI — Civic Complaint Intelligence Engine",
+  "description": "AI layer for municipal grievance systems featuring regional voice/photo/text intake, embedding & geo deduplication clustering, explainable priority ranking, community volunteer task assignment with skill-based matching, and official map dashboard with closed-loop verification.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

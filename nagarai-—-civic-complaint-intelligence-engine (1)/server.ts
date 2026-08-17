@@ -329,35 +329,6 @@ Analyze the provided input and extract JSON with this EXACT structure:
           clean = 'Asphalt road crater and surface depression posing vehicular hazard.';
         }
 
-        // Attempt PyTorch ML Backend Connection (YOLOv8 + CLIP + Sentence-Transformers on Port 8000)
-        try {
-          const pyRes = await fetch('http://127.0.0.1:8000/api/complaint/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-              raw_text: rawText || 'Civic complaint reported',
-              latitude: String(gpsCoordinates?.lat || 28.6315),
-              longitude: String(gpsCoordinates?.lng || 77.2167)
-            }).toString()
-          });
-          if (pyRes.ok) {
-            const pyData = await pyRes.json();
-            if (pyData && pyData.category) {
-              console.log('Successfully received ML inference from Python PyTorch engine (Port 8000):', pyData.category);
-              if (pyData.category === 'pothole') cat = 'pothole';
-              else if (pyData.category === 'garbage') cat = 'garbage_dump';
-              else if (pyData.category === 'open_manhole') cat = 'open_manhole';
-              else if (pyData.category === 'waterlogging') cat = 'waterlogging';
-              else if (pyData.category === 'streetlight') cat = 'broken_streetlight';
-              
-              if (pyData.severity) sev = pyData.severity;
-              if (pyData.auto_description) clean = pyData.auto_description;
-            }
-          }
-        } catch (pyErr) {
-          console.log('Python ML Server standby on port 8000');
-        }
-
         extractedData = {
           category: cat,
           severity: sev,
@@ -367,7 +338,6 @@ Analyze the provided input and extract JSON with this EXACT structure:
           department: dept,
           isLifeHazard: isLife,
           detectedHazards: [cat.replace(/_/g, ' ')],
-
           extentDetails: 'Estimated active civic defect',
           confidence: 0.94,
         };
@@ -831,15 +801,6 @@ Return JSON:
     res.json({ success: true, notification: notif });
   });
 
-  // Clear all database clusters and complaints to start completely fresh
-  app.post('/api/clear', (req, res) => {
-    masterClusters = [];
-    allComplaints = [];
-    notifications = [];
-    officerNotifications = [];
-    res.json({ success: true, message: "Database wiped. Starting completely fresh with 0 complaints!", clusters: [], notifications: [], officerNotifications: [] });
-  });
-
   // Reset demo state to initial seed
   app.post('/api/reset', (req, res) => {
     masterClusters = getInitialSeedClusters();
@@ -849,7 +810,6 @@ Return JSON:
     officerNotifications = [...INITIAL_OFFICER_NOTIFICATIONS];
     res.json({ success: true, clusters: masterClusters, notifications, officerNotifications });
   });
-
 
   // Vite middleware for development vs Static files in production
   if (process.env.NODE_ENV !== 'production') {
