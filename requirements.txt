@@ -16,13 +16,17 @@ ultralytics>=8.1.0
 git+https://github.com/openai/CLIP.git
 pillow>=10.2.0
 
-# Audio Speech Recognition ASR (Task 1 - Whisper & IndicConformer)
+# Audio Speech Recognition ASR (Task 1 - Whisper)
 transformers>=4.38.0
 soundfile>=0.12.1
+pydub>=0.25.1
 
 # Text Embeddings & Vector NLP (Task 3 - Sentence Transformers)
 sentence-transformers>=2.5.0
 numpy>=1.26.0
+
+# Language Model Fallback (OpenAI API)
+openai>=1.14.0
 
 # PostgreSQL + PostGIS + pgvector Database Engine
 sqlalchemy>=2.0.0
